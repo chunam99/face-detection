@@ -26,27 +26,30 @@ const FaceApi = () => {
   const [countdown, setCountdown] = useState(null);
   const [hasFace, setHasFace] = useState(false);
   const [captured, setCaptured] = useState(false);
+  const [isCaptureEnabled, setIsCaptureEnabled] = useState(true);
 
   useEffect(() => {
     return () => {
       clearInterval(detection.current);
+      clearInterval(intervalRef.current);
     };
   }, [captured]);
 
   const handleResults = useCallback((faces) => {
-    if (faces && faces.length > 0) {
+    if (faces && faces.length > 0 && isCaptureEnabled) {
       const firstFace = faces[0];
       if (firstFace._box) {
-        const { _x, _y, _width, _height } = firstFace._box;
+        const { x, y, width, height } = firstFace._box;
 
         const isFaceWithinBounds =
-          _x >= 441.6942423901771 &&
-          _x + _width <= 441.6942423901771 + 363.9312779823689 &&
-          _y >= 239.70332248890426 &&
-          _y + _height <= 239.70332248890426 + 351.6706103282493;
+          x >= 400.1292277729856 &&
+          x + width <= 500.1292277729856 + 377.2922763838725 &&
+          y >= 200.37791837109978 &&
+          y + height <= 300.37791837109978 + 335.4877796357128;
 
         if (isFaceWithinBounds) {
           setImgOutline(outlineFace);
+          setIsCaptureEnabled(false);
           setHasFace(true);
         } else {
           setCountdown(null);
@@ -68,7 +71,6 @@ const FaceApi = () => {
           webcamRef.current.video,
           new faceapi.TinyFaceDetectorOptions()
         );
-        console.log({ faces });
         handleResults(faces);
       }
     }, 100);
@@ -112,7 +114,7 @@ const FaceApi = () => {
   );
 
   return (
-    <div>
+    <WrapperDiv>
       {!imageSrc ? (
         <WrapperWebcam>
           <Webcam
@@ -131,7 +133,7 @@ const FaceApi = () => {
       ) : (
         <img src={imageSrc} key={"image-preview"} alt="Detected face" />
       )}
-    </div>
+    </WrapperDiv>
   );
 };
 
@@ -148,8 +150,14 @@ const WrapperWebcam = styled.div`
   }
 
   .webcam {
-    transform: scaleX(-1);
+    max-width: 100%;
   }
+`;
+
+const WrapperDiv = styled.div`
+  transform: scaleX(-1);
+  display: flex;
+  justify-content: center;
 `;
 
 const CountdownOverlay = styled.div`
@@ -159,6 +167,11 @@ const CountdownOverlay = styled.div`
   transform: translate(-50%, -50%);
   font-size: 3rem;
   color: white;
+  transform: scaleX(-1);
+
+  @media (max-width: 768px) {
+    font-size: 2rem;
+  }
 `;
 
 export default FaceApi;

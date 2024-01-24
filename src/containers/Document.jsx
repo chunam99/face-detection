@@ -20,6 +20,8 @@ function Document() {
   const webcamRef = useRef(null);
   const [countdown, setCountdown] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
+  const detection = useRef();
+  const [hasFace, setHasFace] = useState(false);
 
   const detectDocument = async (frame) => {
     // Thực hiện nhận diện văn bản bằng Tesseract.js
@@ -37,31 +39,62 @@ function Document() {
     }
   };
 
+  const detectFace = async (frame) => {
+    const canvas = faceapi.createCanvasFromMedia(frame);
+    const displaySize = {
+      width: inputResolution.width,
+      height: inputResolution.height,
+    };
+    faceapi.matchDimensions(canvas, displaySize);
+
+    const detections = await faceapi
+      .detectAllFaces(frame)
+      .withFaceLandmarks()
+      .withFaceDescriptors();
+    setHasFace(detections.length > 0);
+
+    return detections.length > 0;
+  };
+
+  const handleStreamVideo = useCallback(async () => {
+    detection.current = setInterval(async () => {
+      if (webcamRef.current) {
+        await faceapi.nets.tinyFaceDetector.loadFromUri(
+          "facenet/models/tiny_face_detector"
+        );
+        const faces = await faceapi.detectAllFaces(
+          webcamRef.current.video,
+          new faceapi.TinyFaceDetectorOptions()
+        );
+        console.log({ faces });
+        handleDocumentDetection(faces);
+      }
+    }, 100);
+  }, []);
+
+  const handleDocumentDetection = async (documentInfo) => {
+    const hasFace = documentInfo.length > 0;
+    if (hasFace) {
+      console.log("Có người trong frame, không thực hiện chụp hình.");
+    } else {
+      detectDocument(documentInfo.frame);
+    }
+  };
+
   const captureImage = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
   };
 
-  const handleDocumentDetection = (documentInfo) => {
-    if (
-      documentInfo.xMin >= 100 &&
-      documentInfo.xMax <= 500 &&
-      documentInfo.yMin >= 100 &&
-      documentInfo.yMax <= 300
-    ) {
-      detectDocument(documentInfo.frame);
-    }
-  };
-
   const runDetector = () => {
     // Thực hiện logic nhận diện giấy tờ và gọi handleDocumentDetection khi có kết quả
-    const intervalId = setInterval(() => {
+    const intervalId = setInterval(async () => {
       if (webcamRef.current && webcamRef.current.video.readyState === 4) {
         const frame = webcamRef.current.getCanvas();
 
         console.log({ frame });
 
-        // Thực hiện logic nhận diện giấy tờ tại đây, và gọi handleDocumentDetection khi có kết quả
+        // Thực hiện logic nhận diện giấy tờ và khuôn mặt tại đây, và gọi handleDocumentDetection khi có kết quả
         // Ví dụ:
         const documentInfo = {
           xMin: 100,
@@ -70,7 +103,7 @@ function Document() {
           yMax: 300,
           frame,
         };
-        handleDocumentDetection(documentInfo);
+        await handleDocumentDetection(documentInfo);
       }
     }, 1000); // Chạy mỗi giây, bạn có thể điều chỉnh tần suất theo nhu cầu
 
@@ -89,10 +122,10 @@ function Document() {
     (videoNode) => {
       const video = videoNode.target;
       if (video.readyState === 4) {
-        runDetector();
+        handleStreamVideo();
       }
     },
-    [runDetector]
+    [handleStreamVideo]
   );
 
   return (
