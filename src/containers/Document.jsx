@@ -1,9 +1,9 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Webcam from "react-webcam";
-import Tesseract from "tesseract.js";
-import outlineFace from "../assets/outline-front-1.png";
 import * as faceapi from "face-api.js";
 import styled from "styled-components";
+import outline from "../assets/outline-front-1.png";
+import Tesseract from "tesseract.js";
 
 const inputResolution = {
   width: 1280,
@@ -18,16 +18,52 @@ const videoConstraints = {
 
 function Document() {
   const webcamRef = useRef(null);
+  const detection = useRef();
+
   const [countdown, setCountdown] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
-  const detection = useRef();
-  const [hasFace, setHasFace] = useState(false);
+  const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
+  const [outlinePosition, setOutlinePosition] = useState({ top: '50%', left: '50%' });
+  const [isIDCardDetectedInOutline, setIsIDCardDetectedInOutline] = useState(false);
+
+
+  // Hàm này được gọi khi video feed được load
+  useEffect(() => {
+    return () => {
+      clearInterval(detection.current);
+    };
+  }, []);
+
+  const handleVideoLoad = () => {
+    const video = webcamRef.current.video;
+    setVideoDimensions({ width: video.width, height: video.height });
+
+    // Lấy thông tin về vị trí của phần tử .webcam trên màn hình
+    const webcamElement = document.querySelector('.webcam');
+    const rect = webcamElement.getBoundingClientRect();
+
+    // Tính toán vị trí mới của outlineFace dựa trên vị trí của .webcam
+    const newOutlinePosition = {
+      top: rect.top + rect.height / 2,
+      left: rect.left + rect.width / 2,
+    };
+
+    setOutlinePosition(newOutlinePosition);
+  };
+
+  // Hàm này được gọi khi component được mount hoặc video feed được load
+  useEffect(() => {
+    handleVideoLoad();
+  }, [webcamRef.current]);
+
+  // Hàm này được gọi khi có thay đổi về vị trí hoặc kích thước của outline position
+  useEffect(() => {
+    detectIDCard();
+  }, []);
 
   const detectDocument = async (frame) => {
     // Thực hiện nhận diện văn bản bằng Tesseract.js
-    const {
-      data: { text },
-    } = await Tesseract.recognize(frame, "eng", {
+    const { data: { text } } = await Tesseract.recognize(frame, "eng", {
       logger: (info) => console.log(info),
     });
 
@@ -39,94 +75,85 @@ function Document() {
     }
   };
 
-  const detectFace = async (frame) => {
-    const canvas = faceapi.createCanvasFromMedia(frame);
-    const displaySize = {
-      width: inputResolution.width,
-      height: inputResolution.height,
-    };
-    faceapi.matchDimensions(canvas, displaySize);
-
-    const detections = await faceapi
-      .detectAllFaces(frame)
-      .withFaceLandmarks()
-      .withFaceDescriptors();
-    setHasFace(detections.length > 0);
-
-    return detections.length > 0;
-  };
-
-  const handleStreamVideo = useCallback(async () => {
-    detection.current = setInterval(async () => {
-      if (webcamRef.current) {
-        await faceapi.nets.tinyFaceDetector.loadFromUri(
-          "facenet/models/tiny_face_detector"
-        );
-        const faces = await faceapi.detectAllFaces(
-          webcamRef.current.video,
-          new faceapi.TinyFaceDetectorOptions()
-        );
-        console.log({ faces });
-        handleDocumentDetection(faces);
-      }
-    }, 100);
-  }, []);
-
-  const handleDocumentDetection = async (documentInfo) => {
-    const hasFace = documentInfo.length > 0;
-    if (hasFace) {
-      console.log("Có người trong frame, không thực hiện chụp hình.");
-    } else {
-      detectDocument(documentInfo.frame);
-    }
-  };
-
   const captureImage = () => {
     const imageSrc = webcamRef.current.getScreenshot();
     setCapturedImage(imageSrc);
   };
 
-  const runDetector = () => {
-    // Thực hiện logic nhận diện giấy tờ và gọi handleDocumentDetection khi có kết quả
-    const intervalId = setInterval(async () => {
-      if (webcamRef.current && webcamRef.current.video.readyState === 4) {
-        const frame = webcamRef.current.getCanvas();
+  // const detectIDCard = async () => {
+  //   detection.current = setInterval(async () => {
+  //     if (webcamRef.current) {
+  //       await faceapi.nets.tinyFaceDetector.loadFromUri(
+  //         "facenet/models/tiny_face_detector"
+  //       );
+  
+  //       const faces = await faceapi.detectAllFaces(
+  //         webcamRef.current.video,
+  //         new faceapi.TinyFaceDetectorOptions()
+  //       );
+  
+  //       if (faces.length > 0) {
+  //         console.log("person")
+  //       }
+  //       else {
+  //         const video = webcamRef.current.video;
 
-        console.log({ frame });
+  //         const xRatio = (video.clientWidth / 100) * 30;
+  //         const yRatio = (video.clientHeight / 100) * 30;
+  //         const widthRatio = (video.clientWidth / 100) * 40;
+  //         const heightRatio = (video.clientHeight / 100) * 35;
 
-        // Thực hiện logic nhận diện giấy tờ và khuôn mặt tại đây, và gọi handleDocumentDetection khi có kết quả
-        // Ví dụ:
-        const documentInfo = {
-          xMin: 100,
-          xMax: 500,
-          yMin: 100,
-          yMax: 300,
-          frame,
-        };
-        await handleDocumentDetection(documentInfo);
+  //         detectDocument();
+  
+  //         if (isIDCardDetectedInOutline) {
+  //           console.log("trong khung");
+  //         }
+  //       }
+  //     }  
+  //   },100)
+    
+  // };
+
+  const detectIDCard = async () => {
+    detection.current = setInterval(async () => {
+      if (webcamRef.current) {
+        await faceapi.nets.tinyFaceDetector.loadFromUri(
+          "facenet/models/tiny_face_detector"
+        );
+  
+        const faces = await faceapi.detectAllFaces(
+          webcamRef.current.video,
+          new faceapi.TinyFaceDetectorOptions()
+        );
+  
+        const video = webcamRef.current.video;
+        const xRatio = (video.clientWidth / 100) * 30;
+        const yRatio = (video.clientHeight / 100) * 30;
+        const widthRatio = (video.clientWidth / 100) * 40;
+        const heightRatio = (video.clientHeight / 100) * 35;
+  
+        console.log({ faces });
+        if (faces.length === 1 && faces[0].x !== undefined) {
+          if (
+            faces[0].x > xRatio &&
+            faces[0].y > yRatio &&
+            faces[0].x + faces[0].width < xRatio + widthRatio &&
+            faces[0].y + faces[0].height < yRatio + heightRatio
+          ) {
+            console.log("Căn cước nằm trong khung");
+            setIsIDCardDetectedInOutline(true);
+          } else {
+            console.log("Căn cước nằm ngoài khung");
+            setIsIDCardDetectedInOutline(false);
+          }
+        } else {
+          console.log("Có nhiều hơn hoặc không có căn cước trong khung");
+          setIsIDCardDetectedInOutline(false);
+        }
       }
-    }, 1000); // Chạy mỗi giây, bạn có thể điều chỉnh tần suất theo nhu cầu
-
-    return () => clearInterval(intervalId);
+    }, 100);
   };
-
-  useEffect(() => {
-    // Chạy hàm nhận diện khi component được mount
-    const cleanup = runDetector();
-
-    // Hủy interval khi component bị unmount
-    return cleanup;
-  }, []); // Chạy chỉ một lần sau khi component mount
-
-  const handleVideoLoad = useCallback(
-    (videoNode) => {
-      const video = videoNode.target;
-      if (video.readyState === 4) {
-        handleStreamVideo();
-      }
-    },
-    [handleStreamVideo]
-  );
+  
 
   return (
     <div>
@@ -143,10 +170,13 @@ function Document() {
           {countdown !== null && (
             <CountdownOverlay>{countdown}</CountdownOverlay>
           )}
-          <img src={outlineFace} alt="" />
+          <img
+            src={outline}
+            alt=""
+          />
         </WrapperWebcam>
       ) : (
-        <img src={capturedImage} key={"image-preview"} alt="Detected face" />
+        <img src={capturedImage} key={"image-preview"} alt="Detected ID card" />
       )}
     </div>
   );

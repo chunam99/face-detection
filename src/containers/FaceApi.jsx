@@ -26,7 +26,7 @@ const FaceApi = () => {
   const [countdown, setCountdown] = useState(null);
   const [hasFace, setHasFace] = useState(false);
   const [captured, setCaptured] = useState(false);
-  const [isCaptureEnabled, setIsCaptureEnabled] = useState(true);
+  const [webcamKey, setWebcamKey] = useState(0);
 
   useEffect(() => {
     return () => {
@@ -36,7 +36,7 @@ const FaceApi = () => {
   }, [captured]);
 
   const handleResults = useCallback((faces) => {
-    if (faces && faces.length > 0 && isCaptureEnabled) {
+    if (faces && faces.length > 0) {
       const firstFace = faces[0];
       if (firstFace._box) {
         const { x, y, width, height } = firstFace._box;
@@ -49,7 +49,6 @@ const FaceApi = () => {
 
         if (isFaceWithinBounds) {
           setImgOutline(outlineFace);
-          setIsCaptureEnabled(false);
           setHasFace(true);
         } else {
           setCountdown(null);
@@ -62,19 +61,25 @@ const FaceApi = () => {
   }, []);
 
   const handleStreamVideo = useCallback(async () => {
+    console.log({ webcamRef });
     detection.current = setInterval(async () => {
-      if (webcamRef.current) {
+      if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
         await faceapi.nets.tinyFaceDetector.loadFromUri(
           "facenet/models/tiny_face_detector"
         );
+        console.log({ video: webcamRef.current.video });
+
         const faces = await faceapi.detectAllFaces(
           webcamRef.current.video,
           new faceapi.TinyFaceDetectorOptions()
         );
         handleResults(faces);
+      } else {
+        console.error("video.readyState is null or undefined");
       }
     }, 100);
   }, [handleResults]);
+  
 
   const startCountdown = useCallback((duration, callback) => {
     setCountdown(duration);
@@ -91,10 +96,14 @@ const FaceApi = () => {
   }, []);
 
   const captureImage = useCallback(() => {
-    console.log("capturing image");
-    const imageSrc = webcamRef.current.getScreenshot();
-    setImageSrc(imageSrc);
-    setCaptured(true);
+    if (webcamRef.current) {
+      const imageSrc = webcamRef.current.getScreenshot();
+      setImageSrc(imageSrc);
+      setCaptured(true);
+      setWebcamKey((prevKey) => prevKey + 1);
+    } else {
+      console.error("webcamRef is null or undefined");
+    }
   }, []);
 
   useEffect(() => {
@@ -118,6 +127,7 @@ const FaceApi = () => {
       {!imageSrc ? (
         <WrapperWebcam>
           <Webcam
+            key={webcamKey}
             className="webcam"
             ref={webcamRef}
             width={inputResolution.width}
