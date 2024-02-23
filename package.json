@@ -4,8 +4,11 @@
   "private": true,
   "dependencies": {
     "@cardscan.ai/insurance-cardscan-react": "^3.0.16",
-    "@tensorflow-models/coco-ssd": "^2.1.0",
-    "@tensorflow/tfjs": "^2.4.0",
+    "@tensorflow-models/coco-ssd": "^2.2.3",
+    "@tensorflow/tfjs-backend-cpu": "^4.17.0",
+    "@tensorflow/tfjs-backend-webgl": "^4.17.0",
+    "@tensorflow/tfjs-converter": "^4.17.0",
+    "@tensorflow/tfjs-core": "^4.17.0",
     "face-api.js": "^0.22.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

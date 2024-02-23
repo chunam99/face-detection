@@ -24,8 +24,6 @@ function Document() {
   const [capturedImage, setCapturedImage] = useState(null);
   const [videoDimensions, setVideoDimensions] = useState({ width: 0, height: 0 });
   const [outlinePosition, setOutlinePosition] = useState({ top: '50%', left: '50%' });
-  const [isIDCardDetectedInOutline, setIsIDCardDetectedInOutline] = useState(false);
-
 
   // Hàm này được gọi khi video feed được load
   useEffect(() => {
@@ -80,40 +78,6 @@ function Document() {
     setCapturedImage(imageSrc);
   };
 
-  // const detectIDCard = async () => {
-  //   detection.current = setInterval(async () => {
-  //     if (webcamRef.current) {
-  //       await faceapi.nets.tinyFaceDetector.loadFromUri(
-  //         "facenet/models/tiny_face_detector"
-  //       );
-  
-  //       const faces = await faceapi.detectAllFaces(
-  //         webcamRef.current.video,
-  //         new faceapi.TinyFaceDetectorOptions()
-  //       );
-  
-  //       if (faces.length > 0) {
-  //         console.log("person")
-  //       }
-  //       else {
-  //         const video = webcamRef.current.video;
-
-  //         const xRatio = (video.clientWidth / 100) * 30;
-  //         const yRatio = (video.clientHeight / 100) * 30;
-  //         const widthRatio = (video.clientWidth / 100) * 40;
-  //         const heightRatio = (video.clientHeight / 100) * 35;
-
-  //         detectDocument();
-  
-  //         if (isIDCardDetectedInOutline) {
-  //           console.log("trong khung");
-  //         }
-  //       }
-  //     }  
-  //   },100)
-    
-  // };
-
   const detectIDCard = async () => {
     detection.current = setInterval(async () => {
       if (webcamRef.current) {
@@ -126,34 +90,37 @@ function Document() {
           new faceapi.TinyFaceDetectorOptions()
         );
   
-        const video = webcamRef.current.video;
-        const xRatio = (video.clientWidth / 100) * 30;
-        const yRatio = (video.clientHeight / 100) * 30;
-        const widthRatio = (video.clientWidth / 100) * 40;
-        const heightRatio = (video.clientHeight / 100) * 35;
-  
-        console.log({ faces });
-        if (faces.length === 1 && faces[0].x !== undefined) {
-          if (
-            faces[0].x > xRatio &&
-            faces[0].y > yRatio &&
-            faces[0].x + faces[0].width < xRatio + widthRatio &&
-            faces[0].y + faces[0].height < yRatio + heightRatio
-          ) {
-            console.log("Căn cước nằm trong khung");
-            setIsIDCardDetectedInOutline(true);
-          } else {
-            console.log("Căn cước nằm ngoài khung");
-            setIsIDCardDetectedInOutline(false);
-          }
-        } else {
-          console.log("Có nhiều hơn hoặc không có căn cước trong khung");
-          setIsIDCardDetectedInOutline(false);
+        if (faces.length > 0) {
+          console.log("person")
         }
-      }
-    }, 100);
-  };
+        else {
+          const idCardWidth = 640;
+          const idCardHeight = 405;
   
+          // const outlineLeft = 648;
+          // const outlineTop = 368;
+          const video = webcamRef.current.video;
+
+          const isIDCardDetectedInOutline = (
+            outlinePosition.left >=  (video.clientWidth / 100) * 30 &&
+            outlinePosition.top >= (video.clientHeight / 100) * 30 &&
+            outlinePosition.left + idCardWidth <= (video.clientWidth / 100) + idCardWidth &&
+            outlinePosition.top + idCardHeight <= (video.clientHeight / 100) * 30 + idCardHeight
+          );
+
+          console.log("(video.clientHeight / 100)", (video.clientHeight / 100))
+
+  
+          if (isIDCardDetectedInOutline) {
+            console.log("trong khung");
+            detectDocument();
+
+          }
+        }
+      }  
+    },100)
+    
+  };
 
   return (
     <div>

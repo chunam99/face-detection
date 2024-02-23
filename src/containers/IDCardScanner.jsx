@@ -1,94 +1,167 @@
-import React, { useEffect, useRef } from 'react';
-import Webcam from 'react-webcam';
-import * as cocoSsd from '@tensorflow-models/coco-ssd';
-import Swal from 'sweetalert2';
+import React, { useEffect, useRef, useState } from "react";
+import Webcam from "react-webcam";
+import Swal from "sweetalert2";
+import styled from "styled-components";
+import outline from "../assets/outline-front-1.png";
+const cocoSsd = require("@tensorflow-models/coco-ssd");
 
+const inputResolution = {
+  width: 1280,
+  height: 720,
+};
 const IDCardScanner = () => {
   const webcamRef = useRef(null);
-  let count = 0;
-  let scanning = true;
+  const cropFrameRef = useRef(null);
+  const [count, setCount] = useState(0);
+  const [scanning, setScanning] = useState(true);
+  const [capturedImage, setCapturedImage] = useState(null);
 
   useEffect(() => {
     const drawVideo = async () => {
-      if (!webcamRef.current) return;
-
-      const video = webcamRef.current.video;
+      let context;
+      let canvas;
+      context = cropFrameRef.current.getContext("2d");
 
       try {
-        console.log({cocoSsd})
-        const model = await cocoSsd.load('ssdlite_mobilenet_v2');
-        console.log('Loaded model', model);
-        
-        const detectCard = async () => {
-          const predictions = await model.detect(video);
+        const model = await cocoSsd.load();
+        const xRatio = (webcamRef.current.video.clientWidth / 100) * 25;
+        const yRatio = (webcamRef.current.video.clientHeight / 100) * 22;
+        const widthRatio = (webcamRef.current.video.clientWidth / 100) * 50;
+        const heightRatio = (webcamRef.current.video.clientHeight / 100) * 55;
 
+    
+        const drawBoundingBox = (context, bbox, color = "red") => {
+          context.beginPath();
+          context.rect(bbox[0], bbox[1], bbox[2], bbox[3]);
+          context.strokeStyle = color;
+          context.lineWidth = 2;
+          context.stroke();
+          context.closePath();
+        };
+
+        const detectCard = async () => {
+          context.drawImage(
+            webcamRef.current.video,
+            0,
+            0,
+            webcamRef.current.video.clientWidth,
+            webcamRef.current.video.clientHeight
+          );
+          const imageData = context.getImageData(
+            xRatio,
+            yRatio,
+            widthRatio,
+            heightRatio
+          );
+          canvas = cropFrameRef.current;
+          context = canvas.getContext("2d");
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          drawBoundingBox(
+            context,
+            [xRatio, yRatio, widthRatio, heightRatio],
+            "transparent"
+          );
+          const predictions = await model.detect(imageData);
           predictions.forEach(async (prediction) => {
             const bbox = prediction.bbox;
-
-            if (prediction.class === 'person') {
-              count += 1;
-
-              if (count >= 5) {
-                const result = await Swal.fire({
-                  title: 'Do you want to save the image?',
-                  showDenyButton: true,
-                  showCancelButton: true,
-                  confirmButtonText: 'Yes',
-                  denyButtonText: 'No',
-                  customClass: {
-                    actions: 'my-actions',
-                    cancelButton: 'order-1 right-gap',
-                    confirmButton: 'order-2',
-                    denyButton: 'order-3',
-                  },
-                });
-
-                if (result.isConfirmed) {
-                  Swal.fire('Saved!', '', 'success');
-                } else if (result.isDenied) {
-                  Swal.fire('Changes are not saved', '', 'info');
-                }
-
-                count = 0;
-              }
+            console.log(prediction);
+            if (prediction.class === "book") {
+              // setCount((prevCount) => prevCount + 1);
+              // if (count >= 5) {
+              //   drawBoundingBox(context, [
+              //     bbox[0] + xRatio,
+              //     bbox[1] + yRatio,
+              //     bbox[2],
+              //     bbox[3],
+              //   ]);
+              //   handleCaptureImage();
+              //   setScanning(false);
+              // }
+              drawBoundingBox(context, [
+                bbox[0] + xRatio,
+                bbox[1] + yRatio,
+                bbox[2],
+                bbox[3],
+              ]);
+              handleCaptureImage();
+              setScanning(false);
             } else {
-              count = 0;
+              setCount(0);
             }
           });
         };
 
-        const scanLoop = async () => {
-          while (scanning) {
-            await detectCard();
-            await new Promise((r) => setTimeout(r, 50));
-          }
-        };
-
-        scanLoop();
+        while (scanning) {
+          await detectCard();
+          await new Promise((r) => setTimeout(r, 50));
+        }
       } catch (error) {
-        console.error('Error loading model:', error);
+        console.error("Error accessing webcam:", error);
       }
     };
 
     drawVideo();
-  }, []);
+
+    return () => {
+      setScanning(false);
+    };
+  }, [scanning, count]);
+
+  const handleCaptureImage = () => {
+    const imageSrc = webcamRef.current.getScreenshot();
+    setCapturedImage(imageSrc);
+  };
 
   return (
-    <div className="card-wrapper">
-      <div id="camera-section">
-        <Webcam
-          ref={webcamRef}
-          style={{ position: 'absolute', left: 0 }}
-          width={800}
-          height={600}
-          screenshotFormat="image/jpeg"
-        />
-      </div>
-      <div id="preview">
-        <img src="" id="preview-img" alt="" />
-      </div>
-    </div>
+    <WrapperWebcam>
+      {!capturedImage ? (
+        <>
+          <Webcam
+            audio={false}
+            ref={webcamRef}
+            screenshotFormat="image/jpeg"
+            width={inputResolution.width}
+            height={inputResolution.height}
+          />
+          <canvas
+            style={{ position: "absolute", left: 0 }}
+            width="1280"
+            height="720"
+            ref={cropFrameRef}
+            id="crop-frame"
+          />
+          <canvas
+            style={{ position: "absolute", left: 0 }}
+            width="800"
+            height="600"
+            id="boundingBoxCanvas"
+          />
+          <img src={outline} alt="" />
+        </>
+      ) : (
+        <div id="preview">
+          <img src={capturedImage} id="preview-img" alt="" />
+        </div>
+      )}
+    </WrapperWebcam>
   );
 };
+
+const WrapperWebcam = styled.div`
+  position: relative;
+  width: max-content;
+
+  img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+  }
+
+  .webcam {
+    transform: scaleX(-1);
+  }
+`;
 
 export default IDCardScanner;
