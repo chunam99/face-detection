@@ -1,0 +1,10 @@
+{
+  "files": {
+    "main.js": "/face-detection/static/js/main.af3121c6.js",
+    "index.html": "/face-detection/index.html",
+    "main.af3121c6.js.map": "/face-detection/static/js/main.af3121c6.js.map"
+  },
+  "entrypoints": [
+    "static/js/main.af3121c6.js"
+  ]
+}
