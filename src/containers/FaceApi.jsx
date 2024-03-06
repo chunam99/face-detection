@@ -61,13 +61,15 @@ const FaceApi = () => {
   }, []);
 
   const handleStreamVideo = useCallback(async () => {
-    console.log({ webcamRef });
     detection.current = setInterval(async () => {
-      if (webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4) {
+      if (
+        webcamRef.current &&
+        webcamRef.current.video &&
+        webcamRef.current.video.readyState === 4
+      ) {
         await faceapi.nets.tinyFaceDetector.loadFromUri(
           "facenet/models/tiny_face_detector"
         );
-        console.log({ video: webcamRef.current.video });
 
         const faces = await faceapi.detectAllFaces(
           webcamRef.current.video,
@@ -79,7 +81,6 @@ const FaceApi = () => {
       }
     }, 100);
   }, [handleResults]);
-  
 
   const startCountdown = useCallback((duration, callback) => {
     setCountdown(duration);
@@ -123,29 +124,38 @@ const FaceApi = () => {
   );
 
   return (
-    <WrapperDiv>
-      {!imageSrc ? (
-        <WrapperWebcam>
-          <Webcam
-            key={webcamKey}
-            className="webcam"
-            ref={webcamRef}
-            width={inputResolution.width}
-            height={inputResolution.height}
-            videoConstraints={videoConstraints}
-            onLoadedData={handleVideoLoad}
-          />
-          {countdown !== null && (
-            <CountdownOverlay>{countdown}</CountdownOverlay>
-          )}
-          <img src={imgOutline} alt="" />
-        </WrapperWebcam>
-      ) : (
-        <img src={imageSrc} key={"image-preview"} alt="Detected face" />
-      )}
-    </WrapperDiv>
+    <>
+      <WrapperTitle>Face detection</WrapperTitle>
+      <WrapperDiv>
+        {!imageSrc ? (
+          <WrapperWebcam>
+            <Webcam
+              key={webcamKey}
+              className="webcam"
+              ref={webcamRef}
+              width={inputResolution.width}
+              height={inputResolution.height}
+              videoConstraints={videoConstraints}
+              onLoadedData={handleVideoLoad}
+            />
+            {countdown !== null && (
+              <CountdownOverlay>{countdown}</CountdownOverlay>
+            )}
+            <img src={imgOutline} alt="" />
+          </WrapperWebcam>
+        ) : (
+          <img src={imageSrc} key={"image-preview"} alt="Detected face" />
+        )}
+      </WrapperDiv>
+    </>
   );
 };
+
+const WrapperTitle = styled.h2`
+  text-align: center;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+`;
 
 const WrapperWebcam = styled.div`
   position: relative;

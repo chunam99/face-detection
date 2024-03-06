@@ -10,7 +10,6 @@
 3. Run `yarn dev`
 4. Act weird
 
-![Screenshot!](/src/assets/screenshot.png "My face")
 # face-detection
 # face-detection
 # face-detection

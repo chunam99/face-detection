@@ -1090,7 +1090,7 @@
     "@babel/types" "^7.4.4"
     esutils "^2.0.2"
 
-"@babel/preset-react@^7.12.5", "@babel/preset-react@^7.16.0":
+"@babel/preset-react@^7.12.5", "@babel/preset-react@^7.16.0", "@babel/preset-react@^7.23.3":
   version "7.23.3"
   resolved "https://registry.yarnpkg.com/@babel/preset-react/-/preset-react-7.23.3.tgz#f73ca07e7590f977db07eb54dbe46538cc015709"
   integrity sha512-tbkHOS9axH6Ysf2OUEqoSZ6T3Fa2SrNH6WTWSPBboxKzdxNc9qOICeLXkNG0ZEwbQ1HY8liwOce4aN/Ceyuq6w==
@@ -7928,6 +7928,11 @@ react-is@^18.0.0:
   version "18.2.0"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-18.2.0.tgz#199431eeaaa2e09f86427efbb4f1473edb47609b"
   integrity sha512-xWGDIW6x921xtzPkhiULtthJHoJvBbF3q26fzloPCK0hsvxtPVelvftw3zjbHWSkR2km9Z+4uxbDDK/6Zw9B8w==
+
+react-ocr@^0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/react-ocr/-/react-ocr-0.0.1.tgz#55733264babf740ab2fd641564cff88a440d450b"
+  integrity sha512-GVqObLY35JulAHBsmj6xmADq9UtkRwQSrOmLyphEOOlhQKTiQgvcqRrUZFrjA9B2Q4SVjqiqOGI0ANtWaX3aEw==
 
 react-qr-code@^2.0.12:
   version "2.0.12"
