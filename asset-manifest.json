@@ -1,12 +1,12 @@
 {
   "files": {
-    "main.js": "/face-detection/static/js/main.30606f16.js",
+    "main.js": "/face-detection/static/js/main.e8051d87.js",
     "static/media/outline-face-error.png": "/face-detection/static/media/outline-face-error.ceeb99ffd7ad2f185747.png",
     "static/media/outline-face.png": "/face-detection/static/media/outline-face.007be931eddcfcd3b777.png",
     "index.html": "/face-detection/index.html",
-    "main.30606f16.js.map": "/face-detection/static/js/main.30606f16.js.map"
+    "main.e8051d87.js.map": "/face-detection/static/js/main.e8051d87.js.map"
   },
   "entrypoints": [
-    "static/js/main.30606f16.js"
+    "static/js/main.e8051d87.js"
   ]
 }
