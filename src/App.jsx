@@ -12,12 +12,12 @@ function App() {
         <WrapperNav>
           <Link to="/">Home</Link>
           <Link to="/face-detection">Face Detection</Link>
-          <Link to="/card-detection">Card Detection</Link>
+          {/* <Link to="/card-detection">Card Detection</Link> */}
         </WrapperNav>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/face-detection" element={<FaceApi />} />
-          <Route path="/card-detection" element={<IDCardScanner />} />
+          {/* <Route path="/card-detection" element={<IDCardScanner />} /> */}
         </Routes>
       </BrowserRouter>
     </>
